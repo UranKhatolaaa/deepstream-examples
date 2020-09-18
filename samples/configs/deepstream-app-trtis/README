@@ -1,0 +1,128 @@
+################################################################################
+# Copyright (c) 2020 NVIDIA Corporation.  All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+################################################################################
+
+This document describes the procedure to generate plan engine files and run
+Triton Inference Server samples on TensorRT, Tensorflow, ONNX, Pytorch models.
+
+On dGPU platforms, these samples are meant to be executed inside DeepStream's
+Triton Inference Server container.
+On Jetson platforms, these samples are meant to be executed on target device
+directly or inside DeepStream L4T container.
+For DeepStream containers, please refer to the DeepStream Quick Start Guide
+for instructions on pulling the container image and starting the container.
+Once the DeepStream Triton environment is ready, run the following commands:
+
+--------------------------------------------------------------------------------
+Preparing classification video samples.
+--------------------------------------------------------------------------------
+1. Install ffmpeg. It is a pre-requisite to run the next step.
+   $ sudo apt-get update && sudo apt-get install ffmpeg
+
+2. Preparing video samples.
+   Go to samples directory and run the following command to generate classification
+   video stream at samples/streams/classification_test_video.mp4
+   $ ./prepare_classification_test_video.sh
+
+Notes:
+   Users can also copy their own classification video files to the same location
+   instead of these steps.
+
+--------------------------------------------------------------------------------
+Preparing TensorRT, Tensorflow, ONNX models
+--------------------------------------------------------------------------------
+1. Go to samples directory and run the following command.
+   $ ./prepare_ds_trtis_model_repo.sh
+   All the sample models should be downloaded/generated into
+   samples/trtis-model-repo directory.
+
+--------------------------------------------------------------------------------
+Running the Triton Inference Server samples
+--------------------------------------------------------------------------------
+1. Run the following command to inspect nvinferserver plugin installed successfully.
+   $ gst-inspect-1.0 nvinferserver
+2. Run the following command to start the app.
+   $ deepstream-app -c <path to source....txt>
+     e.g. $ deepstream-app -c source1_primary_classifier.txt
+3. Application config files included in `configs/deepstream-app-trtis/`
+   a. source30_1080p_dec_infer-resnet_tiled_display_int8.txt (30 Decode + Infer)
+   b. source4_1080p_dec_infer-resnet_tracker_sgie_tiled_display_int8.txt
+      (4 Decode + Infer + SGIE + Tracker)
+   c. source1_primary_classifier.txt (Single source + full frame classification)
+      NOTE: Other classification models can be used by changing the nvinferserver
+            config file in the [*-gie] group of application config file.
+   d. source1_primary_detector.txt (Single source + object detection using ssd)
+   e. source1_primary_classifier_nano.txt (Single source + full frame classification)
+      NOTE: Classification config file for Nano since memory might not be enough for
+            other models. Tune a larger 'tf_gpu_memory_fraction' value for other
+            platforms.
+   f. source1_primary_detector_nano.txt (Single source + object detection using ssd)
+      NOTE: Detection config file for Nano since memory might not be enough for
+            other models. Tune a larger 'tf_gpu_memory_fraction' value for other
+            platforms.
+   On certain platforms, model inference might not be in realtime and frames get
+   dropped, in that case, edit source...txt file and update 'sync=0' in [sink..] group.
+4. Configuration files for "nvinferserver" element in `configs/deepstream-app-trtis/`
+   a. config_infer_plan_engine_primary.txt (Primary Object Detector)
+   b. config_infer_secondary_plan_engine_carcolor.txt (Secondary Car Color Classifier)
+   c. config_infer_secondary_plan_engine_carmake.txt (Secondary Car Make Classifier)
+   d. config_infer_secondary_plan_engine_vehicletypes.txt (Secondary Vehicle Type Classifier)
+   e. config_infer_primary_classifier_densenet_onnx.txt (DenseNet-121 v1.2 classifier)
+   f. config_infer_primary_classifier_inception_graphdef_postprocessInTrtis.txt
+      (Tensorflow Inception v3 classifier - Post processing in Triton)
+   g. config_infer_primary_classifier_inception_graphdef_postprocessInDS.txt
+      (Tensorflow Inception v3 classifier - Post processing in DeepStream)
+   h. config_infer_primary_detector_ssd_inception_v2_coco_2018_01_28.txt
+      (TensorFlow SSD Inception V2 Object Detector)
+   i. config_infer_primary_classifier_mobilenet_v1_graphdef.txt
+      (Tensorflow Mobilenet v1 classifier for Nano - Post processing in Triton)
+   j. config_infer_primary_detector_ssd_mobilenet_v1_coco_2018_01_28.txt
+      (TensorFlow SSD Mobilenet V1 Object Detector for Nano)
+
+--------------------------------------------------------------------------------
+Notes:
+--------------------------------------------------------------------------------
+1. If the application runs into errors, cannot create gst elements, try again
+after removing gstreamer cache
+   rm ${HOME}/.cache/gstreamer-1.0/registry.x86_64.bin
+2. When running TensorFlow models using Triton Inference Server, the GPU device
+memory may fall short. The allowed GPU device memory allocation for TensorFlow
+models can be tuned using the 'tf_gpu_memory_fraction' parameter in the
+nvdsinferserver's config files (config_infer_*). A larger value would reserve
+more GPU memory for TensorFlow per process, it is possible to have better
+performance but may also cause Out-Of-Memory or even core dump. The suggested
+value range is [0.2, 0.6].
+3. When running deepstream for first time, the following warning might show up:
+   "GStreamer-WARNING: Failed to load plugin '...libnvdsgst_inferserver.so':
+    libtrtserver.so: cannot open shared object file: No such file or directory"
+This is a harmless warning indicating that the DeepStream's nvinferserver plugin
+cannot be used since "Triton Inference Server" is not installed.
+If required, try DeepStream's Triton docker image or install the Triton Inference
+Server manually. For more details, refer to https://github.com/NVIDIA/triton-inference-server.
+4. When running Tensorflow Inception_V3 and SSD_Inception_V2 models on Nano,
+update config.pbtxt files in samples/trtis_modeo_repo subdirectories accordingly to
+switch to CPU instances since memory is not good enough for GPU instances.
+5. When running each Tensorflow/Onnx model in GPU instance. It is optional to
+enable TensorRT acceleration. Uncomment optimization{} block in each model's
+config.pbtxt file under samples/trtis_modeo_repo subdirectory. It might take several
+minutes generate TensorRT online caches during intialization.
+6. To learn more details of each parameter, go to section "Gst-nvinferserver" in
+   https://docs.nvidia.com/metropolis/deepstream/plugin-manual/index.html
