@@ -23,56 +23,66 @@ def main():
     print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
-        sys.stderr.write(" Unable to create Pipeline")
+        sys.stderr.write("Unable to create Pipeline")
     
     # ______________________________
     # Create Source Element
     print("Creating Source")
     source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
     if not source:
-        sys.stderr.write(" Unable to create Source")
-
+        sys.stderr.write("Unable to create Source")
 
     # ______________________________
     # Create Nvstreammux instance to form batches from one or more sources.
+    print("Creating Stremmux")
     streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
     if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux")
+        sys.stderr.write("Unable to create NvStreamMux")
 
     # ______________________________
     # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
+    print("Creating Primary Inference")
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
     if not pgie:
-        sys.stderr.write(" Unable to create pgie")
+        sys.stderr.write("Unable to create pgie")
 
-
-    # # ______________________________
-    # # Use convertor to convert from NV12 to RGBA as required by nvosd
-    # convertor = Gst.ElementFactory.make("nvvideoconvert", "convertor")
-    # if not convertor:
-    #     sys.stderr.write(" Unable to create convertor 2")
-
-    # # ______________________________
-    # # Create OSD to draw on the converted RGBA buffer
-    # nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
-    # if not nvosd:
-    #     sys.stderr.write(" Unable to create nvosd")
-
-    # # Create OSD Post Convert
-    # nvvidconv_postosd = Gst.ElementFactory.make("nvvideoconvert", "convertor_postosd")
-    # if not nvvidconv_postosd:
-    #     sys.stderr.write(" Unable to create nvvidconv_postosd")
-
-    # # Create a caps filter
-    # caps = Gst.ElementFactory.make("capsfilter", "filter")
-    # caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=NV12"))
 
     # ______________________________
-    # Create Convertor Element
+    # Use convertor to convert from NV12 to RGBA as required by nvosd
     print("Creating Convertor")
-    convertor2 = Gst.ElementFactory.make("nvvidconv", "converter_2")
+    convertor = Gst.ElementFactory.make("nvvideoconvert", "convertor")
+    if not convertor:
+        sys.stderr.write("Unable to create convertor")
+
+    # Create a caps filter
+    caps = Gst.ElementFactory.make("capsfilter", "convertor-filter")
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=RGBA"))
+
+    # ______________________________
+    # Create OSD to draw on the converted RGBA buffer
+    print("Creating OSD")
+    nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
+    if not nvosd:
+        sys.stderr.write("Unable to create nvosd")
+
+    # ______________________________
+    # Create OSD Post Convert to bring the frames to NV12
+    print("Creating Convertor 2")
+    convertor2 = Gst.ElementFactory.make("nvvideoconvert", "convertor-2")
     if not convertor2:
-        sys.stderr.write(" Unable to create convertor")
+        sys.stderr.write("Unable to create convertor 2")
+
+    # Create a caps filter
+    caps2 = Gst.ElementFactory.make("capsfilter", "convertor-filter-2")
+    caps2.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=NV12"))
+
+
+    # ______________________________
+    # Create Convertor Element to Flip the Image
+    print("Creating Convertor 3")
+    convertor3 = Gst.ElementFactory.make("nvvidconv", "converter-3")
+    if not convertor3:
+        sys.stderr.write("Unable to create convertor 3")
 
 
     # ______________________________
@@ -80,7 +90,7 @@ def main():
     print("Creating Overlay")
     sink = Gst.ElementFactory.make("nvoverlaysink", "overlay")
     if not sink:
-        sys.stderr.write(" Unable to create overlay")
+        sys.stderr.write("Unable to create overlay")
 
 
     # Set Element Properties
@@ -96,7 +106,7 @@ def main():
 
     pgie.set_property('config-file-path', "config.txt")
 
-    convertor2.set_property('flip-method', 2)
+    # convertor3.set_property('flip-method', 2)
 
 
     # Add Elemements to Pipielin
@@ -104,29 +114,31 @@ def main():
     pipeline.add(source)
     pipeline.add(streammux)
     pipeline.add(pgie)
-    # pipeline.add(convertor)
-    # pipeline.add(nvosd)
-    # pipeline.add(nvvidconv_postosd)
-    # pipeline.add(caps)
+    pipeline.add(convertor)
+    pipeline.add(caps)
+    pipeline.add(nvosd)
     pipeline.add(convertor2)
+    pipeline.add(caps2)
+    pipeline.add(convertor3)
     pipeline.add(sink)
 
 
-    # sinkpad = streammux.get_request_pad("sink_0")
-    # if not sinkpad:
-        # sys.stderr.write(" Unable to get the sink pad of streammux")
+    sinkpad = streammux.get_request_pad("sink_0")
+    if not sinkpad:
+        sys.stderr.write(" Unable to get the sink pad of streammux")
 
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
     source.link(streammux)
     streammux.link(pgie)
-    pgie.link(convertor2)
-    # convertor.link(nvosd)
-    # nvosd.link(nvvidconv_postosd)
-    # nvvidconv_postosd.link(caps)
-    # caps.link(convertor2)
-    convertor2.link(sink)
+    pgie.link(convertor)
+    convertor.link(caps)
+    caps.link(nvosd)
+    caps.link(convertor2)
+    convertor2.link(caps2)
+    caps2.link(convertor3)
+    convertor3.link(sink)
     
 
     # Create an event loop and feed gstreamer bus mesages to it

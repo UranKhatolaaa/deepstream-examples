@@ -30,14 +30,6 @@ def main():
 
 
     # ______________________________
-    # Create Convertor Element
-    print("Creating Convertor")
-    convertor = Gst.ElementFactory.make("nvvidconv", "converter")
-    if not convertor:
-        sys.stderr.write(" Unable to create convertor")
-
-
-    # ______________________________
     # Create Nvstreammux instance to form batches from one or more sources.
     streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
     if not streammux:
@@ -48,6 +40,14 @@ def main():
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
     if not pgie:
         sys.stderr.write(" Unable to create pgie")
+
+
+    # ______________________________
+    # Create Convertor Element
+    print("Creating Convertor")
+    convertor = Gst.ElementFactory.make("nvvidconv", "converter")
+    if not convertor:
+        sys.stderr.write(" Unable to create convertor")
 
 
     # ______________________________
