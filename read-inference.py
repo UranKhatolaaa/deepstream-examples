@@ -1,3 +1,8 @@
+#
+#
+# Display the Image on the Screen And read the config file from the inference models
+#
+#
 import argparse
 import sys
 sys.path.append('../')
@@ -31,36 +36,31 @@ def main():
 
     # ______________________________
     # Create Nvstreammux instance to form batches from one or more sources.
-    print("Creating Streammux")
     streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
     if not streammux:
         sys.stderr.write(" Unable to create NvStreamMux")
 
     # ______________________________
     # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
-    print("Creating Primary Inference")
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
     if not pgie:
         sys.stderr.write(" Unable to create pgie")
 
-    # ______________________________
-    # Create Convertor Element
-    print("Creating Convertor 1")
-    convertor = Gst.ElementFactory.make("nvvidconv", "converter-1")
-    if not convertor:
-        sys.stderr.write(" Unable to create convertor 1")
 
     # ______________________________
-    # Finally render the osd output
-    if is_aarch64():
-        transform = Gst.ElementFactory.make("nvegltransform", "nvegl-transform")
+    # Create Convertor Element
+    print("Creating Convertor")
+    convertor = Gst.ElementFactory.make("nvvidconv", "converter")
+    if not convertor:
+        sys.stderr.write(" Unable to create convertor")
+
 
     # ______________________________
     # Create Overlay Element
-    print("Creating EGL Overlay")
-    sink = Gst.ElementFactory.make("nveglglessink", "egl-overlay")
+    print("Creating Overlay")
+    sink = Gst.ElementFactory.make("nvoverlaysink", "overlay")
     if not sink:
-        sys.stderr.write(" Unable to create egl overlay")
+        sys.stderr.write(" Unable to create overlay")
 
 
     # Set Element Properties
@@ -86,8 +86,6 @@ def main():
     pipeline.add(pgie)
     pipeline.add(convertor)
     pipeline.add(sink)
-    if is_aarch64():
-        pipeline.add(transform)
 
 
     sinkpad = streammux.get_request_pad("sink_0")
@@ -100,11 +98,7 @@ def main():
     source.link(streammux)
     streammux.link(pgie)
     pgie.link(convertor)
-    if is_aarch64():
-        convertor.link(transform)
-        transform.link(sink)
-    else:
-        convertor.link(sink)
+    convertor.link(sink)
     
 
     # Create an event loop and feed gstreamer bus mesages to it

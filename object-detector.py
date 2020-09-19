@@ -1,3 +1,8 @@
+#
+#
+# Display the Image on the Screen with Object Detections
+#
+#
 import argparse
 import sys
 sys.path.append('../')
@@ -18,7 +23,6 @@ PGIE_CLASS_ID_ROADSIGN = 3
 
 def osd_sink_pad_buffer_probe(pad,info,u_data):
     frame_number=0
-
     #Intiallizing object counter with 0.
     obj_counter = {
         PGIE_CLASS_ID_VEHICLE:0,
@@ -33,6 +37,7 @@ def osd_sink_pad_buffer_probe(pad,info,u_data):
         print("Unable to get GstBuffer ")
         return
 
+
     # Retrieve batch metadata from the gst_buffer
     # Note that pyds.gst_buffer_get_nvds_batch_meta() expects the
     # C address of gst_buffer as input, which is obtained with hash(gst_buffer)
@@ -45,7 +50,7 @@ def osd_sink_pad_buffer_probe(pad,info,u_data):
             # The casting also keeps ownership of the underlying memory
             # in the C code, so the Python garbage collector will leave
             # it alone.
-           frame_meta = pyds.NvDsFrameMeta.cast(l_frame.data)
+            frame_meta = pyds.NvDsFrameMeta.cast(l_frame.data)
         except StopIteration:
             break
 
@@ -92,7 +97,7 @@ def osd_sink_pad_buffer_probe(pad,info,u_data):
         # set(red, green, blue, alpha); set to Black
         py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
         # Using pyds.get_string() to get display_text as string
-        print(pyds.get_string(py_nvosd_text_params.display_text))
+        # print(pyds.get_string(py_nvosd_text_params.display_text))
         pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
         try:
             l_frame=l_frame.next
@@ -148,7 +153,7 @@ def main():
     print("Creating OSD")
     nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
     if not nvosd:
-        sys.stderr.write(" Unable to create nvosd \n")
+        sys.stderr.write(" Unable to create nvosd")
 
     # ______________________________
     # Create Convertor Element to Flip the Camera Only

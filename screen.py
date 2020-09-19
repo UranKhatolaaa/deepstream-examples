@@ -1,3 +1,8 @@
+#
+#
+# Display the Image on the Screen
+#
+#
 import argparse
 import sys
 sys.path.append('../')
