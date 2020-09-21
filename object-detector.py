@@ -112,7 +112,6 @@ def main():
     if is_aarch64():
         pipeline.add(transform)
 
-
     sinkpad = streammux.get_request_pad("sink_0")
     if not sinkpad:
         sys.stderr.write(" Unable to get the sink pad of streammux")

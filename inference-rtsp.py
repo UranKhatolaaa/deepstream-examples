@@ -25,54 +25,79 @@ def main():
     print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
-        sys.stderr.write(" Unable to create Pipeline")
+        sys.stderr.write("Unable to create Pipeline")
     
     # ______________________________
     # Create Source Element
     print("Creating Source")
     source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
     if not source:
-        sys.stderr.write(" Unable to create Source")
+        sys.stderr.write("Unable to create Source")
 
     # ______________________________
     # Create Nvstreammux instance to form batches from one or more sources.
     print("Creating Streammux")
     streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
     if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux")
+        sys.stderr.write("Unable to create NvStreamMux")
 
     # ______________________________
     # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
     print("Creating Primary Inference")
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
     if not pgie:
-        sys.stderr.write(" Unable to create pgie")
+        sys.stderr.write("Unable to create pgie")
+
+    # ______________________________
+    # Use convertor to convert from NV12 to RGBA as required by nvosd
+    print("Creating Convertor 1")
+    convertor = Gst.ElementFactory.make("nvvideoconvert", "convertor-1")
+    if not convertor:
+        sys.stderr.write("Unable to create convertor 1")
+
+    # ______________________________
+    # Create OSD to draw on the converted RGBA buffer
+    print("Creating OSD")
+    nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
+    if not nvosd:
+        sys.stderr.write("Unable to create nvosd")
+
+    # ______________________________
+    # Use convertor to convert from RGBA to I420
+    print("Creating Convertor 2")
+    convertor2 = Gst.ElementFactory.make("nvvideoconvert", "convertor-2")
+    if not convertor2:
+        sys.stderr.write("Unable to create convertor 2")
+
+    # Create a caps filter
+    caps = Gst.ElementFactory.make("capsfilter", "filter-convertor-2")
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=I420"))
 
     # ______________________________
     print("Creating H265 Encoder")
     encoder = Gst.ElementFactory.make("nvv4l2h265enc", "encoder")
     if not encoder:
-        sys.stderr.write(" Unable to create encoder")
+        sys.stderr.write("Unable to create encoder")
 
     # ______________________________
     # Since the data format in the input file is elementary h264 stream, we need a h264parser
     print("Creating H265Parser")
     parser = Gst.ElementFactory.make("h265parse", "h265-parser")
     if not parser:
-        sys.stderr.write(" Unable to create h265 parser")
+        sys.stderr.write("Unable to create h265 parser")
 
     # ______________________________
     rtppay = Gst.ElementFactory.make("rtph265pay", "rtppay")
     print("Creating H265 rtppay")
     if not rtppay:
-        sys.stderr.write(" Unable to create rtppay")
+        sys.stderr.write("Unable to create rtppay")
 
     # ______________________________
     # Make the UDP sink
     updsink_port_num = 5400
     sink = Gst.ElementFactory.make("udpsink", "udpsink")
     if not sink:
-        sys.stderr.write(" Unable to create udpsink")
+        sys.stderr.write("Unable to create udpsink")
 
 
     # Set Element Properties
@@ -104,8 +129,11 @@ def main():
     pipeline.add(source)
     pipeline.add(streammux)
     pipeline.add(pgie)
-    pipeline.add(parser)
+    pipeline.add(convertor)
+    pipeline.add(nvosd)
+    pipeline.add(convertor2)
     pipeline.add(encoder)
+    pipeline.add(parser)
     pipeline.add(rtppay)
     pipeline.add(sink)
 
@@ -117,7 +145,10 @@ def main():
     print("Linking elements in the Pipeline")
     source.link(streammux)
     streammux.link(pgie)
-    pgie.link(encoder)
+    pgie.link(convertor)
+    convertor.link(nvosd)
+    nvosd.link(convertor2)
+    convertor2.link(encoder)
     encoder.link(parser)
     parser.link(rtppay)
     rtppay.link(sink)
@@ -127,6 +158,7 @@ def main():
     bus = pipeline.get_bus()
     bus.add_signal_watch()
     bus.connect ("message", bus_call, loop)
+
 
     # Start streaming
     rtsp_port_num = 8554
@@ -141,6 +173,16 @@ def main():
     server.get_mount_points().add_factory("/streaming", factory)
     
     print("\n *** DeepStream: Launched RTSP Streaming at rtsp://localhost:%d/streaming ***\n\n" % rtsp_port_num)
+
+    # Lets add probe to get informed of the meta data generated, we add probe to
+    # the sink pad of the osd element, since by that time, the buffer would have
+    # had got all the metadata.
+    print('Create OSD Sink Pad')
+    osdsinkpad = nvosd.get_static_pad("sink")
+    if not osdsinkpad:
+        sys.stderr.write(" Unable to get sink pad of nvosd")
+
+    osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
 
     # Start play back and listen to events
     print("Starting pipeline")
