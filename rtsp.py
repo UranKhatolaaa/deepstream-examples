@@ -34,15 +34,6 @@ def main():
     if not source:
         sys.stderr.write(" Unable to create Source")
 
-    # print("Creating Converter")
-    # converter = Gst.ElementFactory.make("nvvideoconvert", "converter")
-    # if not converter:
-    #     sys.stderr.write(" Unable to create Source")
-
-    # # Create a caps filter
-    # caps = Gst.ElementFactory.make("capsfilter", "filter")
-    # caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=640, height=480, framerate=30/1, format=NV12"))
-
     # ______________________________
     print("Creating H265 Encoder")
     encoder = Gst.ElementFactory.make("nvv4l2h265enc", "encoder")
@@ -74,7 +65,11 @@ def main():
     source.set_property('sensor-id', 0)
     # source.set_property('bufapi-version', True)
 
+
     encoder.set_property('insert-sps-pps', True)
+    encoder.set_property('bitrate', 4000000)
+    # encoder.set_property('peak-bitrate', 8000000)
+    # encoder.set_property('control-rate', 1)
 
     rtppay.set_property('pt', 96)
 

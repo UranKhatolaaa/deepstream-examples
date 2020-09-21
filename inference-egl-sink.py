@@ -81,7 +81,7 @@ def main():
 
     pgie.set_property('config-file-path', "config.txt")
 
-    convertor.set_property('flip-method', 2)
+    # convertor.set_property('flip-method', 2)
 
 
     # Add Elemements to Pipielin

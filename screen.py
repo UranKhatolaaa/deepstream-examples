@@ -49,7 +49,7 @@ def main():
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
-    convertor.set_property('flip-method', 2)
+    # convertor.set_property('flip-method', 2)
     
 
 
