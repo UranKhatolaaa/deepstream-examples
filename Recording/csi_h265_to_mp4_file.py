@@ -7,7 +7,7 @@
 #
 import argparse
 import sys
-sys.path.append('../')
+sys.path.append('./')
 import datetime
 import gi
 gi.require_version('Gst', '1.0')
