@@ -2,10 +2,12 @@
 #
 # Stream over RTSP the camera with Object Detection
 #
+# This is a example of the Gstreamer RTSP Server with the Nvidia Infer plugin that loads
+# the configuration to run the ai models in the config file.
 #
 import argparse
 import sys
-sys.path.append('../')
+sys.path.append('./')
 
 import gi
 gi.require_version('Gst', '1.0')
@@ -115,7 +117,7 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "config.txt")
+    pgie.set_property('config-file-path', "./config.txt")
 
     rtppay.set_property('pt', 96)
 

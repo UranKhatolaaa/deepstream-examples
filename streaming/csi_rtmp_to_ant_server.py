@@ -1,12 +1,9 @@
-
-#
 #
 # Publish video to Ant Server
 #
-#
 import argparse
 import sys
-sys.path.append('./')
+sys.path.append('../')
 
 import gi
 gi.require_version('Gst', '1.0')
@@ -26,6 +23,7 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
+    # Create GST Elements
     source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
     encoder = Gst.ElementFactory.make("nvv4l2h264enc", "encoder")
     parser = Gst.ElementFactory.make("h264parse", "parser")
@@ -38,7 +36,7 @@ def main():
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
-    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/frank-edge')
+    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/streaming-test')
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
