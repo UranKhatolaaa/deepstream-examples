@@ -1,4 +1,9 @@
-# gst-launch-1.0 -e nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=1280, height=720, format=NV12, framerate=30/1' ! nvv4l2h265enc bitrate=8000000 ! h265parse ! qtmux ! filesink location=1280.mp4 -e
+# 
+# The folowing example records the video of the CSI Camera to a MP4 File, Encoded h265
+#
+# The Gstreamer pipeline representation of this code is:
+# gst-launch-1.0 nvarguscamerasrc ! nvv4l2h265enc bitrate=8000000 ! h265parse ! filesink location=1280.mp4 -e
+#
 #
 import argparse
 import sys
@@ -17,7 +22,6 @@ def main():
     GObject.threads_init()
     Gst.init(None)
 
-
     # Create Pipeline Element
     print("Creating Pipeline")
     pipeline = Gst.Pipeline()
@@ -26,36 +30,27 @@ def main():
     
     # Create Source Element
     source = create_element_or_error('nvarguscamerasrc', 'camera-source')
-    caps = create_element_or_error('capsfilter', 'caps-source')
     encoder = create_element_or_error('nvv4l2h265enc', 'encoder')
     parser = create_element_or_error('h265parse', 'parser')
-    muxer = create_element_or_error('qtmux', 'muxer')
     sink = create_element_or_error('filesink', 'sink')
 
     # Set Element Properties
-    source.set_property('sensor-id', 1)
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=1280, height=720, format=NV12, framerate=30/1"))
+    source.set_property('sensor-id', 0)
     encoder.set_property('bitrate', 8000000)
-    sink.set_property('location', 'prueba.mp4 -e')
-    sink.set_property("sync", 0)
-    sink.set_property("async", 0)
+    sink.set_property('location', 'prueba.mp4')
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
-    pipeline.add(caps)
     pipeline.add(encoder)
     pipeline.add(parser)
-    pipeline.add(muxer)
     pipeline.add(sink)
-
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
     source.link(encoder)
     encoder.link(parser)
-    parser.link(muxer)
-    muxer.link(sink)
+    parser.link(sink)
     
 
     # Create an event loop and feed gstreamer bus mesages to it
@@ -73,7 +68,6 @@ def main():
         loop.run()
     except:
         pass
-
 
     # Cleanup
     pipeline.set_state(Gst.State.NULL)
