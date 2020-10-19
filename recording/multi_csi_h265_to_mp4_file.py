@@ -1,9 +1,5 @@
 # 
-# The folowing example records the video of the CSI Camera to a MP4 File, Encoded h265
-#
-# The Gstreamer pipeline representation of this code is:
-# gst-launch-1.0 nvarguscamerasrc ! nvv4l2h265enc bitrate=8000000 ! h265parse ! filesink location=1280.mp4 -e
-#
+# The folowing example records the video using a queue
 #
 import argparse
 import sys

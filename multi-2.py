@@ -1,10 +1,10 @@
 #
-# Publish video to Ant Server
+# The folowing example publish the video to ant server and record the video locally using a quees
 #
 import argparse
 import sys
 sys.path.append('./')
-
+import datetime
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
@@ -30,6 +30,7 @@ def main():
     # Create Gst Threads
     tee = create_element_or_error("tee", "tee");
     streaming_queue = create_element_or_error("queue", "streaming_queue");
+    recording_queue = create_element_or_error("queue", "recording_queue");
 
     # Create Gst Elements for Streaming Branch
     s_encoder = create_element_or_error("nvv4l2h264enc", "streaming-encoder")
@@ -37,14 +38,22 @@ def main():
     s_muxer = create_element_or_error("flvmux", "streaming-muxer")
     s_sink = create_element_or_error("rtmpsink", "streaming-sink")
 
+    # Create Gst Elements for Recording Branch
+    r_encoder = create_element_or_error('nvv4l2h265enc', 'encoder')
+    r_parser = create_element_or_error('h265parse', 'parser')
+    r_sink = create_element_or_error('filesink', 'sink')
+
     # Set Element Properties
     source.set_property('sensor-id', 0)
-    s_sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/streaming-test')
+    s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
 
+    # Set Element Properties
+    r_encoder.set_property('bitrate', 8000000)
+    r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
-    pipeline.add(source, tee, streaming_queue, s_encoder, s_parser, s_muxer, s_sink)
+    pipeline.add(source, tee, streaming_queue, recording_queue, s_encoder, s_parser, s_muxer, s_sink, r_encoder, r_parser, r_sink)
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
@@ -55,6 +64,10 @@ def main():
     s_parser.link(s_muxer)
     s_muxer.link(s_sink)
 
+    recording_queue.link(r_encoder)
+    r_encoder.link(r_parser)
+    r_parser.link(r_sink)
+
     # Get pad templates from source
     tee_src_pad_template = tee.get_pad_template("src_%u")
 
@@ -63,9 +76,19 @@ def main():
     print("Obtained request pad {0} for streaming branch".format(tee_streaming_pad.get_name()))
     streaming_queue_pad = streaming_queue.get_static_pad("sink")
 
+     # Get source to recording queue
+    tee_recording_pad = tee.request_pad(tee_src_pad_template, None, None)
+    print("Obtained request pad {0} for recording branch".format(tee_recording_pad.get_name()))
+    recording_queue_pad = recording_queue.get_static_pad("sink")
+
     # Link sources
     if (tee_streaming_pad.link(streaming_queue_pad) != Gst.PadLinkReturn.OK):
-        print("ERROR: Tee could not be linked")
+        print("ERROR: Tee streaming could not be linked")
+        sys.exit(1)
+
+    # Link sources
+    if (tee_recording_pad.link(recording_queue_pad) != Gst.PadLinkReturn.OK):
+        print("ERROR: Tee recording could not be linked")
         sys.exit(1)
     
     # Create an event loop and feed gstreamer bus mesages to it

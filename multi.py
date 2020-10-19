@@ -14,7 +14,6 @@ from common.create_element_or_error import create_element_or_error
 
 def main():
 
-     
     # Standard GStreamer initialization
     GObject.threads_init()
     Gst.init(None)
