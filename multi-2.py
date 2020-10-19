@@ -46,8 +46,6 @@ def main():
     # Set Element Properties
     source.set_property('sensor-id', 0)
     s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
-
-    # Set Element Properties
     r_encoder.set_property('bitrate', 8000000)
     r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')
 
@@ -59,11 +57,13 @@ def main():
     print("Linking elements in the Pipeline")
     source.link(tee)
 
+    # Streaming Queue
     streaming_queue.link(s_encoder)
     s_encoder.link(s_parser)
     s_parser.link(s_muxer)
     s_muxer.link(s_sink)
 
+    # Recording Queue
     recording_queue.link(r_encoder)
     r_encoder.link(r_parser)
     r_parser.link(r_sink)
@@ -71,26 +71,21 @@ def main():
     # Get pad templates from source
     tee_src_pad_template = tee.get_pad_template("src_%u")
 
-    # Get source to Streaming queue
+    # Get source to Streaming Queue
     tee_streaming_pad = tee.request_pad(tee_src_pad_template, None, None)
     print("Obtained request pad {0} for streaming branch".format(tee_streaming_pad.get_name()))
     streaming_queue_pad = streaming_queue.get_static_pad("sink")
 
-     # Get source to recording queue
+     # Get source to recording Queue
     tee_recording_pad = tee.request_pad(tee_src_pad_template, None, None)
     print("Obtained request pad {0} for recording branch".format(tee_recording_pad.get_name()))
     recording_queue_pad = recording_queue.get_static_pad("sink")
 
     # Link sources
-    if (tee_streaming_pad.link(streaming_queue_pad) != Gst.PadLinkReturn.OK):
+    if (tee_streaming_pad.link(streaming_queue_pad) != Gst.PadLinkReturn.OK and tee_recording_pad.link(recording_queue_pad) != Gst.PadLinkReturn.OK):
         print("ERROR: Tee streaming could not be linked")
         sys.exit(1)
 
-    # Link sources
-    if (tee_recording_pad.link(recording_queue_pad) != Gst.PadLinkReturn.OK):
-        print("ERROR: Tee recording could not be linked")
-        sys.exit(1)
-    
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
     bus = pipeline.get_bus()
