@@ -1,6 +1,6 @@
 #
 #
-# Display the Image on the Screen
+# Display the Image on the Screen using the EGL Sink of Nvidia
 #
 #
 import argparse
@@ -12,6 +12,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
+from common.create_element_or_error import create_element_or_error
 
 def main():
     
@@ -26,44 +27,37 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # Create Source Element
-    print("Creating Source")
-    source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
-    if not source:
-        sys.stderr.write(" Unable to create Source")
+    # ______________________________
+    # Create Elements
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    convertor = create_element_or_error("nvvidconv", "converter-1")
 
-    # Create Convertor Element
-    print("Creating Convertor")
-    convertor = Gst.ElementFactory.make("nvvidconv", "converter")
-    if not convertor:
-        sys.stderr.write(" Unable to create convertor")
+    if is_aarch64():
+        transform = create_element_or_error("nvegltransform", "nvegl-transform")
 
-
-    # Create Overlay Element
-    print("Creating Overlay")
-    sink = Gst.ElementFactory.make("nvoverlaysink", "overlay")
-    if not sink:
-        sys.stderr.write(" Unable to create overlay")
-
+    sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
-    # convertor.set_property('flip-method', 2)
-
-
+    source.set_property('bufapi-version', True)
+    
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
     pipeline.add(convertor)
     pipeline.add(sink)
+    if is_aarch64():
+        pipeline.add(transform)
 
 
     # Link the elements together:
-    # source -> overlaysink
-    
     print("Linking elements in the Pipeline")
     source.link(convertor)
-    convertor.link(sink)
+    if is_aarch64():
+        convertor.link(transform)
+        transform.link(sink)
+    else:
+        convertor.link(sink)
     
 
     # Create an event loop and feed gstreamer bus mesages to it
