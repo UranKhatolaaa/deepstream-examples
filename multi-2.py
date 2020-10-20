@@ -51,7 +51,9 @@ def main():
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
-    pipeline.add(source, tee, streaming_queue, recording_queue, s_encoder, s_parser, s_muxer, s_sink, r_encoder, r_parser, r_sink)
+    pipeline.add(source, tee)
+    pipeline.add(streaming_queue, s_encoder, s_parser, s_muxer, s_sink)
+    pipeline.add(recording_queue, r_encoder, r_parser, r_sink)
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
@@ -82,7 +84,7 @@ def main():
     recording_queue_pad = recording_queue.get_static_pad("sink")
 
     # Link sources
-    if (tee_streaming_pad.link(streaming_queue_pad) != Gst.PadLinkReturn.OK and tee_recording_pad.link(recording_queue_pad) != Gst.PadLinkReturn.OK):
+    if (tee_streaming_pad.link(streaming_queue_pad) != Gst.PadLinkReturn.OK or tee_recording_pad.link(recording_queue_pad) != Gst.PadLinkReturn.OK):
         print("ERROR: Tee streaming could not be linked")
         sys.exit(1)
 
