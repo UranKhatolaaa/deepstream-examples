@@ -78,7 +78,8 @@ def main():
     # r_sink.set_property('location', 'video_%02d.mp4')
     # r_sink.set_property('muxer', 'qtmux')
     # r_sink.set_property('max-size-bytes', 900000000)
-    r_sink.set_property('max-size-time', 900000000000)
+    five_minutes = 900000000000
+    r_sink.set_property('max-size-time', five_minutes)
     # r_sink.set_property('muxer-factory', 'matroskamux')
     # r_sink.set_property('muxer-properties', 'properties,streamable=true')
     r_sink.connect('split-now', __split_video)
