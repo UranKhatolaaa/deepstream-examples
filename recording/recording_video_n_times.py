@@ -30,7 +30,7 @@ def __location(splitmux, frag):
     return 'v-' + str(datetime.datetime.utcnow()) + '.mkv';
 
 def __split_video(splitmux,data):
-    print('video splitted')
+    print('Video Splitted')
     pass
 
 def main():
@@ -78,12 +78,13 @@ def main():
     # r_sink.set_property('location', 'video_%02d.mp4')
     # r_sink.set_property('muxer', 'qtmux')
     # r_sink.set_property('max-size-bytes', 900000000)
-    five_minutes = 900000000000
-    r_sink.set_property('max-size-time', five_minutes)
+    five_minutes =  900000000000
+    r_sink.set_property('max-size-time', 30000000000)
     # r_sink.set_property('muxer-factory', 'matroskamux')
     # r_sink.set_property('muxer-properties', 'properties,streamable=true')
     r_sink.connect('split-now', __split_video)
     r_sink.connect('format-location', __location)
+    r_sink.connect('format-location-full', __location)
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
