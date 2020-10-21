@@ -2,10 +2,12 @@
 # Example of recording videos in chunks
 #
 # Pipeline Example:
-# gst-launch-1.0 nvarguscamerasrc ! nvv4l2h264enc ! h264parse ! splitmuxsink muxer=qtmux location=video%03d.mp4 max-size-bytes=8000000
+# gst-launch-1.0 nvarguscamerasrc ! 'video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, format=(string)NV12, framerate=(fraction)30/1' ! nvv4l2h264enc ! h264parse ! splitmuxsink location=video%02d.mkv max-size-time=1000000 muxer-factory=matroskamux muxer-properties="properties,streamable=true"
+# splitmuxsink location=video%02d.mkv max-size-time=1000000 muxer-factory=matroskamux muxer-properties="properties,streamable=true"
+
 #
 # def on_format_location (self, splitmux, fragment_id, user_data):
-#     filename = str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H-%M-%S')) + '.mp4'
+#     filename = str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H-%M-%S')) + '.mkv'
 #     print(filename)
 #     return filename
 #
@@ -22,6 +24,15 @@ from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
+def __location(splitmux, frag):
+    print('Creating new video segment')
+    print(datetime.datetime.now())
+    return 'v-' + str(datetime.datetime.utcnow()) + '.mkv';
+
+def __split_video(splitmux,data):
+    print('video splitted')
+    pass
+
 def main():
     
     # Standard GStreamer initialization
@@ -32,10 +43,12 @@ def main():
     print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
-        sys.stderr.write(" Unable to create Pipeline")
+        sys.stderr.write("Unable to create Pipeline")
     
     # Create GST Source
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    caps = Gst.ElementFactory.make("capsfilter", "source-caps")
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, format=(string)NV12, framerate=(fraction)30/1"))
 
     # Create Gst Threads
     tee = create_element_or_error("tee", "tee");
@@ -49,25 +62,38 @@ def main():
     s_sink = create_element_or_error("rtmpsink", "streaming-sink")
 
     # Create Gst Elements for Recording Branch
-    r_encoder = create_element_or_error('nvv4l2h265enc', 'encoder')
-    r_parser = create_element_or_error('h265parse', 'parser')
-    r_sink = create_element_or_error('filesink', 'sink')
+    r_encoder = create_element_or_error('nvv4l2h264enc', 'encoder')
+    r_parser = create_element_or_error('h264parse', 'parser')
+    r_sink = create_element_or_error('splitmuxsink', 'sink')
 
-    # Set Element Properties
+    # Set Source Properties
     source.set_property('sensor-id', 0)
+    # source.set_property('num-buffers', 500)
+
+    # Set Streaming Properties
     s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
-    r_encoder.set_property('bitrate', 8000000)
-    r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')
+
+    # Set Streaming Properties
+    # r_encoder.set_property('bitrate', 8000000)
+    # r_sink.set_property('location', 'video_%02d.mp4')
+    # r_sink.set_property('muxer', 'qtmux')
+    # r_sink.set_property('max-size-bytes', 900000000)
+    r_sink.set_property('max-size-time', 900000000000)
+    # r_sink.set_property('muxer-factory', 'matroskamux')
+    # r_sink.set_property('muxer-properties', 'properties,streamable=true')
+    r_sink.connect('split-now', __split_video)
+    r_sink.connect('format-location', __location)
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
-    pipeline.add(source, tee)
+    pipeline.add(source, caps, tee)
     pipeline.add(streaming_queue, s_encoder, s_parser, s_muxer, s_sink)
     pipeline.add(recording_queue, r_encoder, r_parser, r_sink)
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(tee)
+    source.link(caps)
+    caps.link(tee)
 
     # Streaming Queue
     streaming_queue.link(s_encoder)
