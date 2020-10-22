@@ -19,28 +19,21 @@ def main():
     Gst.init(None)
 
     # Create Pipeline Element
-    print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
-        sys.stderr.write(" Unable to create Pipeline")
+        print("Unable to create Pipeline")
+        return False
     
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     
-    streammux = create_element_or_error("nvstreammux", "stream-muxer")
-    pgie = create_element_or_error("nvinfer", "primary-inference")
-    convertor = create_element_or_error("nvvideoconvert", "convertor-1")
-    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
-    convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
-    caps = create_element_or_error("capsfilter", "filter-convertor-2")
-
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
     sink = create_element_or_error("rtmpsink", "sink")
 
     if not (source or encoder or parseer or muxer or sink):
-        sys.stderr.write("One of the elements could not be created")
+        # sys.stderr.write("One of the elements could not be created")
         return;
 
     # Set Element Properties
@@ -76,7 +69,6 @@ def main():
         loop.run()
     except:
         pass
-
 
     # Cleanup
     pipeline.set_state(Gst.State.NULL)

@@ -6,5 +6,7 @@ def create_element_or_error(elemntId, name):
     print("Creating Element: " + elemntId)
     element = Gst.ElementFactory.make(elemntId, name)
     if not element:
-        sys.stderr.write(" Unable to create " + elemntId)
+        print("Unable to create " + elemntId)
+        return False
+
     return element;
