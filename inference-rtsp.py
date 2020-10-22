@@ -14,6 +14,7 @@ from gi.repository import GObject, Gst, GstRtspServer
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.object_detection import osd_sink_pad_buffer_probe
+from common.create_element_or_error import create_element_or_error
 
 def main():
     
@@ -27,83 +28,23 @@ def main():
     if not pipeline:
         sys.stderr.write("Unable to create Pipeline")
     
-    # ______________________________
-    # Create Source Element
-    print("Creating Source")
-    source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
-    if not source:
-        sys.stderr.write("Unable to create Source")
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    streammux = create_element_or_error("nvstreammux", "Stream-muxer")
+    pgie = create_element_or_error("nvinfer", "primary-inference")
+    convertor = create_element_or_error("nvvideoconvert", "convertor-1")
+    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
+    convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
+    caps = create_element_or_error("capsfilter", "filter-convertor-2")
+    encoder = create_element_or_error("nvv4l2h265enc", "encoder")
+    parser = create_element_or_error("h265parse", "h265-parser")
+    rtppay = create_element_or_error("rtph265pay", "rtppay")
+    sink = create_element_or_error("udpsink", "udpsink")
 
-    # ______________________________
-    # Create Nvstreammux instance to form batches from one or more sources.
-    print("Creating Streammux")
-    streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
-    if not streammux:
-        sys.stderr.write("Unable to create NvStreamMux")
-
-    # ______________________________
-    # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
-    print("Creating Primary Inference")
-    pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    if not pgie:
-        sys.stderr.write("Unable to create pgie")
-
-    # ______________________________
-    # Use convertor to convert from NV12 to RGBA as required by nvosd
-    print("Creating Convertor 1")
-    convertor = Gst.ElementFactory.make("nvvideoconvert", "convertor-1")
-    if not convertor:
-        sys.stderr.write("Unable to create convertor 1")
-
-    # ______________________________
-    # Create OSD to draw on the converted RGBA buffer
-    print("Creating OSD")
-    nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
-    if not nvosd:
-        sys.stderr.write("Unable to create nvosd")
-
-    # ______________________________
-    # Use convertor to convert from RGBA to I420
-    print("Creating Convertor 2")
-    convertor2 = Gst.ElementFactory.make("nvvideoconvert", "convertor-2")
-    if not convertor2:
-        sys.stderr.write("Unable to create convertor 2")
-
-    # Create a caps filter
-    caps = Gst.ElementFactory.make("capsfilter", "filter-convertor-2")
     caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=I420"))
-
-    # ______________________________
-    print("Creating H265 Encoder")
-    encoder = Gst.ElementFactory.make("nvv4l2h265enc", "encoder")
-    if not encoder:
-        sys.stderr.write("Unable to create encoder")
-
-    # ______________________________
-    # Since the data format in the input file is elementary h264 stream, we need a h264parser
-    print("Creating H265Parser")
-    parser = Gst.ElementFactory.make("h265parse", "h265-parser")
-    if not parser:
-        sys.stderr.write("Unable to create h265 parser")
-
-    # ______________________________
-    rtppay = Gst.ElementFactory.make("rtph265pay", "rtppay")
-    print("Creating H265 rtppay")
-    if not rtppay:
-        sys.stderr.write("Unable to create rtppay")
-
-    # ______________________________
-    # Make the UDP sink
-    updsink_port_num = 5400
-    sink = Gst.ElementFactory.make("udpsink", "udpsink")
-    if not sink:
-        sys.stderr.write("Unable to create udpsink")
-
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
     source.set_property('bufapi-version', True)
-
 
     encoder.set_property('insert-sps-pps', True)
     encoder.set_property('bitrate', 4000000)
@@ -118,6 +59,8 @@ def main():
     pgie.set_property('config-file-path', "config.txt")
 
     rtppay.set_property('pt', 96)
+    
+    updsink_port_num = 5400
 
     sink.set_property('host', '127.0.0.1')
     sink.set_property('port', updsink_port_num)

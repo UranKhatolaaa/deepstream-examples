@@ -51,9 +51,17 @@ def main():
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
-    pipeline.add(source, tee)
-    pipeline.add(streaming_queue, s_encoder, s_parser, s_muxer, s_sink)
-    pipeline.add(recording_queue, r_encoder, r_parser, r_sink)
+    pipeline.add(source)
+    pipeline.add(tee)
+    pipeline.add(streaming_queue)
+    pipeline.add(s_encoder)
+    pipeline.add(s_parser)
+    pipeline.add(s_muxer)
+    pipeline.add(s_sink)
+    pipeline.add(recording_queue)
+    pipeline.add(r_encoder)
+    pipeline.add(r_parser)
+    pipeline.add(r_sink)
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
