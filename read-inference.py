@@ -12,6 +12,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
+from common.create_element_or_error import create_element_or_error
 
 def main():
     
@@ -29,39 +30,11 @@ def main():
     # ______________________________
     # Create Source Element
     print("Creating Source")
-    source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
-    if not source:
-        sys.stderr.write(" Unable to create Source")
-
-
-    # ______________________________
-    # Create Nvstreammux instance to form batches from one or more sources.
-    streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
-    if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux")
-
-    # ______________________________
-    # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
-    pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    if not pgie:
-        sys.stderr.write(" Unable to create pgie")
-
-
-    # ______________________________
-    # Create Convertor Element
-    print("Creating Convertor")
-    convertor = Gst.ElementFactory.make("nvvidconv", "converter")
-    if not convertor:
-        sys.stderr.write(" Unable to create convertor")
-
-
-    # ______________________________
-    # Create Overlay Element
-    print("Creating Overlay")
-    sink = Gst.ElementFactory.make("nvoverlaysink", "overlay")
-    if not sink:
-        sys.stderr.write(" Unable to create overlay")
-
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    streammux = create_element_or_error("nvstreammux", "Stream-muxer")
+    pgie = create_element_or_error("nvinfer", "primary-inference")
+    convertor = create_element_or_error("nvvidconv", "converter")
+    sink = create_element_or_error("nvoverlaysink", "overlay")
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
@@ -75,8 +48,6 @@ def main():
     streammux.set_property('batched-push-timeout', 4000000)
 
     pgie.set_property('config-file-path', "config.txt")
-
-    # convertor.set_property('flip-method', 2)
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")

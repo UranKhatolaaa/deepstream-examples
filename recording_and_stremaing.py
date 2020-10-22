@@ -75,12 +75,10 @@ def main():
 
     # Get source to Streaming Queue
     tee_streaming_pad = tee.request_pad(tee_src_pad_template, None, None)
-    print("Obtained request pad {0} for streaming branch".format(tee_streaming_pad.get_name()))
     streaming_queue_pad = streaming_queue.get_static_pad("sink")
 
      # Get source to recording Queue
     tee_recording_pad = tee.request_pad(tee_src_pad_template, None, None)
-    print("Obtained request pad {0} for recording branch".format(tee_recording_pad.get_name()))
     recording_queue_pad = recording_queue.get_static_pad("sink")
 
     # Link sources
