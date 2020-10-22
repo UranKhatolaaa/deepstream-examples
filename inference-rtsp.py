@@ -40,7 +40,6 @@ def main():
     rtppay = create_element_or_error("rtph265pay", "rtppay")
     sink = create_element_or_error("udpsink", "udpsink")
 
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), format=I420"))
 
     # Set Element Properties
     source.set_property('sensor-id', 0)

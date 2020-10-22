@@ -12,6 +12,7 @@ gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
+from common.create_element_or_error import create_element_or_error
 
 def main():
     
@@ -26,47 +27,13 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # ______________________________
-    # Create Source Element
-    print("Creating Source")
-    source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
-    if not source:
-        sys.stderr.write(" Unable to create Source")
-
-
-    # ______________________________
-    # Create Nvstreammux instance to form batches from one or more sources.
-    print("Creating Streammux")
-    streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
-    if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux")
-
-    # ______________________________
-    # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
-    print("Creating Primary Inference")
-    pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    if not pgie:
-        sys.stderr.write(" Unable to create pgie")
-
-    # ______________________________
-    # Create Convertor Element
-    print("Creating Convertor 1")
-    convertor = Gst.ElementFactory.make("nvvidconv", "converter-1")
-    if not convertor:
-        sys.stderr.write(" Unable to create convertor 1")
-
-    # ______________________________
-    # Finally render the osd output
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    streammux = create_element_or_error("nvstreammux", "Stream-muxer")
+    pgie = create_element_or_error("nvinfer", "primary-inference")
+    convertor = create_element_or_error("nvvidconv", "converter-1")
     if is_aarch64():
-        transform = Gst.ElementFactory.make("nvegltransform", "nvegl-transform")
-
-    # ______________________________
-    # Create Overlay Element
-    print("Creating EGL Overlay")
-    sink = Gst.ElementFactory.make("nveglglessink", "egl-overlay")
-    if not sink:
-        sys.stderr.write(" Unable to create egl overlay")
-
+        transform = create_element_or_error("nvegltransform", "nvegl-transform")
+    sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
