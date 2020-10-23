@@ -46,7 +46,7 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "config.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/default.txt")
 
     # convertor.set_property('flip-method', 2)
 

@@ -59,7 +59,7 @@ def main():
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
-    pgie.set_property('config-file-path', "./../deepstream_tlt_apps/pgie_detectnet_v2_tlt_config.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/default.txt")
     s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
     r_encoder.set_property('bitrate', 8000000)
     r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')

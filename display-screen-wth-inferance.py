@@ -76,8 +76,15 @@ def main():
 
     # ______________________________
     # Create Overlay Element
+    # print("Creating EGL Overlay")
+    # sink = Gst.ElementFactory.make("nveglglessink", "egl-overlay")
+    # if not sink:
+        # sys.stderr.write(" Unable to create egl overlay")
+
+        # ______________________________
+    # Create Overlay Element
     print("Creating EGL Overlay")
-    sink = Gst.ElementFactory.make("nveglglessink", "egl-overlay")
+    sink = Gst.ElementFactory.make("nvoverlaysink", "egl-overlay")
     if not sink:
         sys.stderr.write(" Unable to create egl overlay")
 
@@ -93,10 +100,10 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "config.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/default.txt")
     pgie.set_property('batch-size', 1)
     pgie.set_property('unique-id', 1)
-    pgie.set_property('model-engine-file', 'models/Primary_Detector/resnet10.caffemodel_b30_gpu0_int8.engine')
+    # pgie.set_property('model-engine-file', 'models/Primary_Detector/resnet10.caffemodel_b30_gpu0_int8.engine')
     # convertor2.set_property('flip-method', 2)
 
 
@@ -109,8 +116,8 @@ def main():
     pipeline.add(nvosd)
     pipeline.add(convertor2)
     pipeline.add(sink)
-    if is_aarch64():
-        pipeline.add(transform)
+    # if is_aarch64():
+        # pipeline.add(transform)
 
     sinkpad = streammux.get_request_pad("sink_0")
     if not sinkpad:
@@ -124,11 +131,11 @@ def main():
     pgie.link(convertor)
     convertor.link(nvosd)
     # nvosd.link(convertor2)
-    if is_aarch64():
-        nvosd.link(transform)
-        transform.link(sink)
-    else:
-        nvosd.link(sink)
+    # if is_aarch64():
+        # nvosd.link(transform)
+        # transform.link(sink)
+    # else:
+    nvosd.link(sink)
     
 
     # Create an event loop and feed gstreamer bus mesages to it
