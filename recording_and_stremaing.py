@@ -32,7 +32,7 @@ def main():
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
-    caps = create_element_or_error("capsfilter", "filter-convertor-2")
+    # caps = create_element_or_error("capsfilter", "filter-convertor-2")
 
     # Create Gst Threads
     tee = create_element_or_error("tee", "tee")
@@ -61,8 +61,8 @@ def main():
     streammux.set_property('batched-push-timeout', 4000000)
     pgie.set_property('config-file-path', "./../deepstream_tlt_apps/pgie_detectnet_v2_tlt_config.txt")
     s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
-    r_encoder.set_property('insert-sps-pps', True)
-    s_encoder.set_property('insert-sps-pps', True)
+    # r_encoder.set_property('insert-sps-pps', True)
+    # s_encoder.set_property('insert-sps-pps', True)
     # encoder.set_property('bitrate', 4000000)
     r_encoder.set_property('bitrate', 8000000)
     r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')

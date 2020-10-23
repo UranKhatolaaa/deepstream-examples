@@ -65,9 +65,6 @@ def main():
     r_sink = create_element_or_error('splitmuxsink', 'recording-sink')
 
     # Create Gst Elements for Display Branch
-    # d_streammux = create_element_or_error("nvstreammux", "display-muxer")
-    # d_pgie = create_element_or_error("nvinfer", "display-inference")
-    # d_convertor = create_element_or_error("nvvidconv", "display-converter")
     d_sink = create_element_or_error("nvoverlaysink", "display-sink")
 
     # Set Source Properties
