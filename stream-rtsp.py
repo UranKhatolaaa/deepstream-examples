@@ -5,7 +5,7 @@
 #
 import argparse
 import sys
-sys.path.append('./')
+sys.path.append('../')
 
 import gi
 gi.require_version('Gst', '1.0')
@@ -13,6 +13,7 @@ gi.require_version('GstRtspServer', '1.0')
 from gi.repository import GObject, Gst, GstRtspServer
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
+from common.create_element_or_error import create_element_or_error
 
 def main():
     
@@ -27,51 +28,20 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # ______________________________
-    # Create Source Element
-    print("Creating Source")
-    source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
-    if not source:
-        sys.stderr.write(" Unable to create Source")
-
-    # ______________________________
-    print("Creating H264 Encoder")
-    encoder = Gst.ElementFactory.make("nvv4l2h264enc", "encoder")
-    if not encoder:
-        sys.stderr.write(" Unable to create encoder")
-
-    # ______________________________
-    # Since the data format in the input file is elementary h264 stream, we need a h264parser
-    print("Creating H264Parser")
-    parser = Gst.ElementFactory.make("h264parse", "h264-parser")
-    if not parser:
-        sys.stderr.write(" Unable to create h264 parser")
-
-    # ______________________________
-    rtppay = Gst.ElementFactory.make("rtph264pay", "rtppay")
-    print("Creating H264 rtppay")
-    if not rtppay:
-        sys.stderr.write(" Unable to create rtppay")
-
-    # ______________________________
-    # Make the UDP sink
-    updsink_port_num = 5400
-    sink = Gst.ElementFactory.make("udpsink", "udpsink")
-    if not sink:
-        sys.stderr.write(" Unable to create udpsink")
-
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    encoder = create_element_or_error("nvv4l2h265enc", "encoder")
+    parser = create_element_or_error("h265parse", "h265-parser")
+    rtppay = create_element_or_error("rtph265pay", "rtppay")
+    sink = create_element_or_error("udpsink", "udpsink")
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
-    # source.set_property('bufapi-version', True)
-
 
     encoder.set_property('insert-sps-pps', True)
     encoder.set_property('bitrate', 4000000)
-    # encoder.set_property('peak-bitrate', 8000000)
-    # encoder.set_property('control-rate', 1)
 
     rtppay.set_property('pt', 96)
+    updsink_port_num = 5400
 
     sink.set_property('host', '127.0.0.1')
     sink.set_property('port', updsink_port_num)
@@ -107,7 +77,7 @@ def main():
     server.attach(None)
     
     factory = GstRtspServer.RTSPMediaFactory.new()
-    factory.set_launch( "( udpsrc name=pay0 port=%d buffer-size=524288 caps=\"application/x-rtp, media=video, clock-rate=90000, encoding-name=(string)%s, payload=96 \" )" % (updsink_port_num, 'H264'))
+    factory.set_launch( "( udpsrc name=pay0 port=%d buffer-size=524288 caps=\"application/x-rtp, media=video, clock-rate=90000, encoding-name=(string)%s, payload=96 \" )" % (updsink_port_num, 'H265'))
     factory.set_shared(True)
     server.get_mount_points().add_factory("/streaming", factory)
     
