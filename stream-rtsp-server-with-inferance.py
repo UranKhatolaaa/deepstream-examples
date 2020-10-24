@@ -49,13 +49,13 @@ def main():
     encoder.set_property('bitrate', 4000000)
     
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
+    streammux.set_property('width', 1280)
+    streammux.set_property('height', 720)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
 
     rtppay.set_property('pt', 96)
     

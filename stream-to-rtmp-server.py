@@ -33,8 +33,7 @@ def main():
     sink = create_element_or_error("rtmpsink", "sink")
 
     if not (source or encoder or parseer or muxer or sink):
-        # sys.stderr.write("One of the elements could not be created")
-        return;
+        return
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
