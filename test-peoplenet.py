@@ -32,22 +32,21 @@ def main():
     pgie = create_element_or_error("nvinfer", "primary-inference")
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
-    convertor2 = create_element_or_error("nvvidconv", "converter-2")
-    transform = create_element_or_error("nvegltransform", "nvegl-transform")
-    sink = create_element_or_error("nveglglessink", "egl-overlay")
+    sink = create_element_or_error("nvoverlaysink", "egl-overlay")
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
     source.set_property('bufapi-version', True)
     
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
+    streammux.set_property('width', 1280)
+    streammux.set_property('height', 720)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
     pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
+    sink.set_property('sync', 0)
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
@@ -56,8 +55,6 @@ def main():
     pipeline.add(pgie)
     pipeline.add(convertor)
     pipeline.add(nvosd)
-    pipeline.add(convertor2)
-    pipeline.add(transform)
     pipeline.add(sink)
 
     sinkpad = streammux.get_request_pad("sink_0")
@@ -70,9 +67,7 @@ def main():
     streammux.link(pgie)
     pgie.link(convertor)
     convertor.link(nvosd)
-    nvosd.link(convertor2)
-    convertor2.link(transform)
-    transform.link(sink)
+    nvosd.link(sink)
     
 
     # Create an event loop and feed gstreamer bus mesages to it
