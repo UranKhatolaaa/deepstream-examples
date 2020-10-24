@@ -16,3 +16,15 @@ This repository contains real using examples for Gstreamer + Nvidia Deepstream p
 - Record mp4 video
 - Record mp4 video and split on chunks
 - Threading and Queues, Streaming and Recording in the same time plus read inferance
+
+
+Reset Json Clocks
+```
+sudo nvpmodel -m 0
+sudo jetson_clocks
+```
+
+Clear Cache
+```
+rm ${HOME}/.cache/gstreamer-1.0/registry.aarch64.bin
+```
