@@ -13,6 +13,7 @@ from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.object_detection import osd_sink_pad_buffer_probe
+from common.create_element_or_error import create_element_or_error
 
 def main():
     
@@ -26,68 +27,14 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # ______________________________
-    # Create Source Element
-    print("Creating Source")
-    source = Gst.ElementFactory.make("nvarguscamerasrc", "camera-source")
-    if not source:
-        sys.stderr.write(" Unable to create Source")
-
-
-    # ______________________________
-    # Create Nvstreammux instance to form batches from one or more sources.
-    print("Creating Streammux")
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
     streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
-    if not streammux:
-        sys.stderr.write(" Unable to create NvStreamMux")
-
-    # ______________________________
-    # Use nvinfer to run inferencing on camera's output, behaviour of inferencing is set through config file
-    print("Creating Primary Inference")
     pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    if not pgie:
-        sys.stderr.write(" Unable to create pgie")
-
-    # ______________________________
-    # Use convertor to convert from NV12 to RGBA as required by nvosd
-    print("Creating Convertor 1")
     convertor = Gst.ElementFactory.make("nvvideoconvert", "convertor-1")
-    if not convertor:
-        sys.stderr.write(" Unable to create convertor 1")
-
-    # ______________________________
-    # Create OSD to draw on the converted RGBA buffer
-    print("Creating OSD")
     nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
-    if not nvosd:
-        sys.stderr.write(" Unable to create nvosd")
-
-    # ______________________________
-    # Create Convertor Element to Flip the Camera Only
-    print("Creating Convertor 2")
     convertor2 = Gst.ElementFactory.make("nvvidconv", "converter-2")
-    if not convertor2:
-        sys.stderr.write(" Unable to create convertor 2")
-
-    # ______________________________
-    # Finally render the osd output
-    if is_aarch64():
-        transform = Gst.ElementFactory.make("nvegltransform", "nvegl-transform")
-
-    # ______________________________
-    # Create Overlay Element
-    # print("Creating EGL Overlay")
-    # sink = Gst.ElementFactory.make("nveglglessink", "egl-overlay")
-    # if not sink:
-        # sys.stderr.write(" Unable to create egl overlay")
-
-        # ______________________________
-    # Create Overlay Element
-    print("Creating EGL Overlay")
+    transform = Gst.ElementFactory.make("nvegltransform", "nvegl-transform")
     sink = Gst.ElementFactory.make("nvoverlaysink", "egl-overlay")
-    if not sink:
-        sys.stderr.write(" Unable to create egl overlay")
-
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
@@ -100,7 +47,7 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/default.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
     pgie.set_property('batch-size', 1)
     pgie.set_property('unique-id', 1)
     # pgie.set_property('model-engine-file', 'models/Primary_Detector/resnet10.caffemodel_b30_gpu0_int8.engine')

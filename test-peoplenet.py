@@ -47,11 +47,7 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/peoplenet.txt")
-    # pgie.set_property('batch-size', 1)
-    # pgie.set_property('unique-id', 1)
-    # pgie.set_property('model-engine-file', 'models/Primary_Detector/resnet10.caffemodel_b30_gpu0_int8.engine')
-
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
@@ -89,11 +85,11 @@ def main():
     # the sink pad of the osd element, since by that time, the buffer would have
     # had got all the metadata.
     # print('Create OSD Sink Pad')
-    osdsinkpad = nvosd.get_static_pad("sink")
-    if not osdsinkpad:
-        sys.stderr.write(" Unable to get sink pad of nvosd")
+    # osdsinkpad = nvosd.get_static_pad("sink")
+    # if not osdsinkpad:
+    #     sys.stderr.write(" Unable to get sink pad of nvosd")
 
-    osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
+    # osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
 
 
     # Start play back and listen to events
