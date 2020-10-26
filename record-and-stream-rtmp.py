@@ -10,7 +10,6 @@ gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
-from common.object_detection import osd_sink_pad_buffer_probe
 from common.create_element_or_error import create_element_or_error
 
 def main():
@@ -32,7 +31,6 @@ def main():
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
-    # caps = create_element_or_error("capsfilter", "filter-convertor-2")
 
     # Create Gst Threads
     tee = create_element_or_error("tee", "tee")
@@ -59,7 +57,7 @@ def main():
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
     s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
     r_encoder.set_property('bitrate', 8000000)
     r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')
@@ -128,14 +126,6 @@ def main():
     bus = pipeline.get_bus()
     bus.add_signal_watch()
     bus.connect ("message", bus_call, loop)
-
-    print('Create OSD Sink Pad')
-    osdsinkpad = nvosd.get_static_pad("sink")
-    if not osdsinkpad:
-        sys.stderr.write(" Unable to get sink pad of nvosd")
-
-    osdsinkpad.add_probe(Gst.PadProbeType.BUFFER, osd_sink_pad_buffer_probe, 0)
-
 
     # Start play back and listen to events
     print("Starting pipeline")
