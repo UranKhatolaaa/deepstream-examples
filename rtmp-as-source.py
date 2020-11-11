@@ -1,7 +1,11 @@
 #
 # Publish video to Ant Server
 #
-# gst-launch-1.0 uridecodebin uri=https://media.streamit.link:5443/LiveApp/streams/44c2fc1d83d2ccf2dab09d311aa6da4e.m3u8 ! autovideosink
+# gst-launch-1.0 uridecodebin uri=https://media.streamit.link:5443/LiveApp/streams/test.m3u8 ! autovideosink
+# gst-launch-1.0 souphttpsrc location=https://media.streamit.link:5443/LiveApp/streams/test.m3u8 ! decodebin ! videoconvert ! nvoverlaysink
+# gst-launch-1.0 souphttpsrc location=https://media.streamit.link:5443/LiveApp/streams/test.m3u8 ! hlsdemux ! decodebin ! videoconvert ! nvoverlaysink
+
+
 
 import argparse
 import sys
@@ -10,7 +14,6 @@ sys.path.append('../')
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
-from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
 def main():
@@ -23,27 +26,34 @@ def main():
     pipeline = Gst.Pipeline()
     
     # Create GST Elements
-    source = create_element_or_error("uridecodebin", "uri-source")
-    sink = create_element_or_error("autovideosink", "sink")
+    source = create_element_or_error("souphttpsrc", "source")
+    muxer = create_element_or_error("hlsdemux", "decoder")
+    decode = create_element_or_error("decodebin", "decoder")
+    converter = create_element_or_error("videoconvert", "converter")
+    sink = create_element_or_error("nvoverlaysink", "sink")
 
     # Set Element Properties
-    source.set_property('uri', 'https://media.streamit.link:5443/LiveApp/streams/44c2fc1d83d2ccf2dab09d311aa6da4e.m3u8')
+    source.set_property('location', 'https://media.streamit.link:5443/LiveApp/streams/test.m3u8')
+    # source.set_property('is-live', True)
+    # source.set_property('keep-alive', True)
 
     # Add Elemements to Pipielin
     pipeline.add(source)
+    pipeline.add(muxer)
+    pipeline.add(decode)
+    pipeline.add(converter)
     pipeline.add(sink)
 
     # Link the elements together:
-    source.link(sink)
+    source.link(muxer)
+    muxer.link(decode)
+    decode.link(converter)
+    converter.link(sink)
     
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
-    bus = pipeline.get_bus()
-    bus.add_signal_watch()
-    bus.connect ("message", bus_call, loop)
 
     # Start play back and listen to events
-    print("Starting pipeline")
     pipeline.set_state(Gst.State.PLAYING)
 
     try:
