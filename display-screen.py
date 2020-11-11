@@ -17,6 +17,8 @@ from common.create_element_or_error import create_element_or_error
 def main():
     
     # Standard GStreamer initialization
+    Gst.debug_set_active(True)
+    Gst.debug_set_default_threshold(4)
     GObject.threads_init()
     Gst.init(None)
 
