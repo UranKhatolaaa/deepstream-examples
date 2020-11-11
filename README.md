@@ -16,6 +16,7 @@ This repository contains real using examples for Gstreamer + Nvidia Deepstream p
 - Record mp4 video
 - Record mp4 video and split on chunks
 - Threading and Queues, Streaming and Recording in the same time plus read inferance
+- RTMP as Source
 
 
 Reset Json Clocks
