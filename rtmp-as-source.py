@@ -27,7 +27,7 @@ def main():
     
     # Create GST Elements
     source = create_element_or_error("souphttpsrc", "source")
-    muxer = create_element_or_error("hlsdemux", "decoder")
+    muxer = create_element_or_error("hlsdemux", "muxer")
     decode = create_element_or_error("decodebin", "decoder")
     converter = create_element_or_error("videoconvert", "converter")
     sink = create_element_or_error("nvoverlaysink", "sink")
