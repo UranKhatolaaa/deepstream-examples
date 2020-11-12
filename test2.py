@@ -14,13 +14,8 @@ import math
 import platform
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
-from common.FPS import GETFPS
-import numpy as np
 import pyds
-import cv2
-import os
-import os.path
-from os import path
+from common.create_element_or_error import create_element_or_error
 
 
 
@@ -80,66 +75,41 @@ def main(args):
     pipeline = Gst.Pipeline()
     is_live = True
 
-    streammux = Gst.ElementFactory.make("nvstreammux", "Stream-muxer")
+    streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pipeline.add(streammux)
 
-    source_bin = create_source_bin('https://media.streamit.link:5443/LiveApp/streams/44c2fc1d83d2ccf2dab09d311aa6da4e.m3u8')
+    source_bin = create_source_bin('https://media.streamit.link:5443/LiveApp/streams/test.m3u8')
     pipeline.add(source_bin)
     sinkpad = streammux.get_request_pad('sink_0') 
     srcpad = source_bin.get_static_pad("src")
     srcpad.link(sinkpad)
 
-    pgie = Gst.ElementFactory.make("nvinfer", "primary-inference")
-    if not pgie:
-        sys.stderr.write(" Unable to create pgie \n")
+    pgie = create_element_or_error("nvinfer", "primary-inference")
 
-    print("Creating nvvidconv1 \n ")
-    nvvidconv1 = Gst.ElementFactory.make("nvvideoconvert", "convertor1")
-    if not nvvidconv1:
-        sys.stderr.write(" Unable to create nvvidconv1 \n")
-    print("Creating filter1 \n ")
+    nvvidconv1 = create_element_or_error("nvvideoconvert", "convertor1")
+
     caps1 = Gst.Caps.from_string("video/x-raw(memory:NVMM), format=RGBA")
-    filter1 = Gst.ElementFactory.make("capsfilter", "filter1")
+    filter1 = create_element_or_error("capsfilter", "filter1")
     if not filter1:
         sys.stderr.write(" Unable to get the caps filter1 \n")
     filter1.set_property("caps", caps1)
-    print("Creating tiler \n ")
-    tiler=Gst.ElementFactory.make("nvmultistreamtiler", "nvtiler")
-    if not tiler:
-        sys.stderr.write(" Unable to create tiler \n")
-    print("Creating nvvidconv \n ")
-    nvvidconv = Gst.ElementFactory.make("nvvideoconvert", "convertor")
-    if not nvvidconv:
-        sys.stderr.write(" Unable to create nvvidconv \n")
-    print("Creating nvosd \n ")
-    nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
-    if not nvosd:
-        sys.stderr.write(" Unable to create nvosd \n")
-    if(is_aarch64()):
-        print("Creating transform \n ")
-        transform=Gst.ElementFactory.make("nvegltransform", "nvegl-transform")
-        if not transform:
-            sys.stderr.write(" Unable to create transform \n")
 
-    print("Creating EGLSink \n")
-    sink = Gst.ElementFactory.make("nveglglessink", "nvvideo-renderer")
-    if not sink:
-        sys.stderr.write(" Unable to create egl sink \n")
+    tiler=create_element_or_error("nvmultistreamtiler", "nvtiler")
 
-    if is_live:
-        print("Atleast one of the sources is live")
-        streammux.set_property('live-source', 1)
+    nvvidconv = create_element_or_error("nvvideoconvert", "convertor")
 
+    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
+
+    transform=create_element_or_error("nvegltransform", "nvegl-transform")
+
+    sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
+
+    streammux.set_property('live-source', 1)
     streammux.set_property('width', 1920)
     streammux.set_property('height', 1080)
     streammux.set_property('batch-size', number_sources)
     streammux.set_property('batched-push-timeout', 4000000)
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
-    # pgie.set_property('config-file-path', "dstest_imagedata_config.txt")
-    pgie_batch_size=pgie.get_property("batch-size")
-    if(pgie_batch_size != number_sources):
-        print("WARNING: Overriding infer-config batch-size",pgie_batch_size," with number of sources ", number_sources," \n")
-        pgie.set_property("batch-size",number_sources)
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
     tiler_rows=int(math.sqrt(number_sources))
     tiler_columns=int(math.ceil((1.0*number_sources)/tiler_rows))
     tiler.set_property("rows",tiler_rows)
@@ -147,38 +117,25 @@ def main(args):
 
     sink.set_property("sync", 0)
 
-    if not is_aarch64():
-        # Use CUDA unified memory in the pipeline so frames
-        # can be easily accessed on CPU in Python.
-        mem_type = int(pyds.NVBUF_MEM_CUDA_UNIFIED)
-        streammux.set_property("nvbuf-memory-type", mem_type)
-        nvvidconv.set_property("nvbuf-memory-type", mem_type)
-        nvvidconv1.set_property("nvbuf-memory-type", mem_type)
-        tiler.set_property("nvbuf-memory-type", mem_type)
-
-    print("Adding elements to Pipeline \n")
+    # Add elements to pipeline
     pipeline.add(pgie)
     pipeline.add(tiler)
     pipeline.add(nvvidconv)
     pipeline.add(filter1)
     pipeline.add(nvvidconv1)
     pipeline.add(nvosd)
-    if is_aarch64():
-        pipeline.add(transform)
+    pipeline.add(transform)
     pipeline.add(sink)
 
-    print("Linking elements in the Pipeline \n")
+    # Link Elements
     streammux.link(pgie)    
     pgie.link(nvvidconv1)
     nvvidconv1.link(filter1)
     filter1.link(tiler)
     tiler.link(nvvidconv)
     nvvidconv.link(nvosd)
-    if is_aarch64():
-        nvosd.link(transform)
-        transform.link(sink)
-    else:
-        nvosd.link(sink)
+    nvosd.link(transform)
+    transform.link(sink)
 
     # create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
@@ -191,12 +148,6 @@ def main(args):
         sys.stderr.write(" Unable to get src pad \n")
     else:
         pass
-
-    # List the sources
-    print("Now playing...")
-    for i, source in enumerate(args[:-1]):
-        if (i != 0):
-            print(i, ": ", source)
 
     print("Starting pipeline \n")
     # start play back and listed to events		
