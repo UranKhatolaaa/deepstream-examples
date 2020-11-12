@@ -22,49 +22,38 @@ import os.path
 from os import path
 
 
-def cb_newpad(decodebin, decoder_src_pad,data):
-    print("In cb_newpad\n")
-    caps=decoder_src_pad.get_current_caps()
-    gststruct=caps.get_structure(0)
-    gstname=gststruct.get_name()
-    source_bin=data
-    features=caps.get_features(0)
+def source_new_pad_added(decodebin, decoder_src_pad, data):
+    print("Source Pad Addded")
+    caps = decoder_src_pad.get_current_caps()
+    gststruct = caps.get_structure(0)
+    gstname = gststruct.get_name()
+    source_bin = data
+    features = caps.get_features(0)
 
-    # Need to check if the pad created by the decodebin is for video and not
-    # audio.
-    if(gstname.find("video")!=-1):
+    if(gstname.find("video") != -1):
         # Link the decodebin pad only if decodebin has picked nvidia
         # decoder plugin nvdec_*. We do this by checking if the pad caps contain
         # NVMM memory features.
         if features.contains("memory:NVMM"):
-            # Get the source bin ghost pad
-            bin_ghost_pad=source_bin.get_static_pad("src")
+            bin_ghost_pad = source_bin.get_static_pad("src")
             if not bin_ghost_pad.set_target(decoder_src_pad):
-                sys.stderr.write("Failed to link decoder src pad to source bin ghost pad\n")
+                sys.stderr.write("Failed to link decoder src pad to source bin ghost pad")
         else:
-            sys.stderr.write(" Error: Decodebin did not pick nvidia decoder plugin.\n")
+            sys.stderr.write("Error: Decodebin did not pick nvidia decoder plugin.")
 
-def decodebin_child_added(child_proxy,Object,name,user_data):
-    print("Decodebin child added:", name, "\n")
-    if(name.find("decodebin") != -1):
-        Object.connect("child-added",decodebin_child_added,user_data)   
-    if(is_aarch64() and name.find("nvv4l2decoder") != -1):
-        print("Seting bufapi_version\n")
-        Object.set_property("bufapi-version",True)
-
+# Create the source
 def create_source_bin(uri):
     nbin = Gst.Bin.new("source-bin-0")
 
-    uri_decode_bin = Gst.ElementFactory.make("uridecodebin", "uri-decode-bin")
+    decoder = Gst.ElementFactory.make("uridecodebin", "uri-decode-bin")
 
-    uri_decode_bin.set_property("uri", uri)
+    decoder.set_property("uri", uri)
 
-    uri_decode_bin.connect("pad-added", cb_newpad,nbin)
-    uri_decode_bin.connect("child-added", decodebin_child_added,nbin)
+    decoder.connect("pad-added", source_new_pad_added, nbin)
 
-    Gst.Bin.add(nbin, uri_decode_bin)
+    Gst.Bin.add(nbin, decoder)
 
-    bin_pad = nbin.add_pad(Gst.GhostPad.new_no_target("src",Gst.PadDirection.SRC))
+    nbin.add_pad(Gst.GhostPad.new_no_target("src", Gst.PadDirection.SRC))
 
     return nbin
 
@@ -84,6 +73,8 @@ def main(args):
     streammux.set_property('height', 1080)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
+
+    streammux.set_property("nvbuf-memory-type", 4000)
 
     sink.set_property("sync", 0)
 
