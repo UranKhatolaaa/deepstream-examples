@@ -27,7 +27,7 @@ from common.create_element_or_error import create_element_or_error
 def __location(splitmux, frag):
     print('Creating new video segment')
     print(datetime.datetime.now())
-    return 'v-' + str(datetime.datetime.utcnow()) + '.mkv';
+    return 'v-' + str(datetime.datetime.utcnow()) + '.mkv'
 
 def main():
     
