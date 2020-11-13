@@ -159,7 +159,3 @@ def main(args):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-
-
-
-# gst-launch-1.0 -v nvarguscamerasrc device=0 ! videoconvert ! video/x-raw,width=640,height=480,framerate=30/1,format=I420 ! omxh264enc periodicty-idr=45 inline-header=FALSE ! h264parse ! video/x-h264,stream-format=avc,alignment=au,profile=baseline ! kvssink name=sink stream-name="my-stream-name" access-key="AKIAIUWN2SXQ2F3HQ5FQ" secret-key="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" alsasrc device=hw:1,0 ! audioconvert ! avenc_aac ! queue ! sink.
