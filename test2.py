@@ -67,7 +67,6 @@ def create_source_bin(uri):
     return nbin
 
 def main(args):
-    number_sources=1
 
     GObject.threads_init()
     Gst.init(None)
@@ -107,13 +106,11 @@ def main(args):
     streammux.set_property('live-source', 1)
     streammux.set_property('width', 1920)
     streammux.set_property('height', 1080)
-    streammux.set_property('batch-size', number_sources)
+    streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
     pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
-    tiler_rows=int(math.sqrt(number_sources))
-    tiler_columns=int(math.ceil((1.0*number_sources)/tiler_rows))
-    tiler.set_property("rows",tiler_rows)
-    tiler.set_property("columns",tiler_columns)
+    tiler.set_property("rows",1)
+    tiler.set_property("columns",1)
 
     sink.set_property("sync", 0)
 
@@ -162,3 +159,7 @@ def main(args):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
+
+
+
+# gst-launch-1.0 -v nvarguscamerasrc device=0 ! videoconvert ! video/x-raw,width=640,height=480,framerate=30/1,format=I420 ! omxh264enc periodicty-idr=45 inline-header=FALSE ! h264parse ! video/x-h264,stream-format=avc,alignment=au,profile=baseline ! kvssink name=sink stream-name="my-stream-name" access-key="AKIAIUWN2SXQ2F3HQ5FQ" secret-key="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" alsasrc device=hw:1,0 ! audioconvert ! avenc_aac ! queue ! sink.

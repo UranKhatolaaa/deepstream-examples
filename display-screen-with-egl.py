@@ -31,10 +31,7 @@ def main():
     # Create Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     convertor = create_element_or_error("nvvidconv", "converter-1")
-
-    if is_aarch64():
-        transform = create_element_or_error("nvegltransform", "nvegl-transform")
-
+    transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
@@ -46,19 +43,14 @@ def main():
     pipeline.add(source)
     pipeline.add(convertor)
     pipeline.add(sink)
-    if is_aarch64():
-        pipeline.add(transform)
+    pipeline.add(transform)
 
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
     source.link(convertor)
-    if is_aarch64():
-        convertor.link(transform)
-        transform.link(sink)
-    else:
-        convertor.link(sink)
-    
+    convertor.link(transform)
+    transform.link(sink)
 
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()

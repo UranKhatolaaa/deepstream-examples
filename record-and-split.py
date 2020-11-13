@@ -69,9 +69,19 @@ def main():
 
     # Set Source Properties
     source.set_property('sensor-id', 0)
+    source.set_property('saturation', 1.2)
+    source.set_property('exposurecompensation', 1.2)
+    source.set_property('wbmode', 0)
 
     # Set Streaming Properties
     s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
+
+    # Set Display Properties
+    d_sink.set_property('overlay', 1)
+    d_sink.set_property('overlay-x', 0)
+    d_sink.set_property('overlay-y', 0)
+    d_sink.set_property('overlay-w', 640)
+    d_sink.set_property('overlay-h', 360)
 
     # Set Streaming Properties
     five_minutes =  900000000000
