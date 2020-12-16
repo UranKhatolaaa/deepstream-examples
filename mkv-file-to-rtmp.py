@@ -11,7 +11,7 @@ from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-
+# gst-launch-1.0 -v filesrc location=../streamit-virtual-edge-appliance/storage/tests/concourse/1.MKV ! matroskademux ! h264parse ! flvmux ! rtmpsink location=rtmp://media.streamit.live/LiveApp/streaming-test
 def main():
     
     # Standard GStreamer initialization
@@ -25,32 +25,32 @@ def main():
         return False
     
     # Create GST Elements
-    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    source = create_element_or_error("filesrc", "file-source")
     
-    encoder = create_element_or_error("nvv4l2h264enc", "encoder")
+    demuxer = create_element_or_error("matroskademux", "demuxer")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
     sink = create_element_or_error("rtmpsink", "sink")
 
-    if not (source or encoder or parseer or muxer or sink):
+    if not (source or demuxer or parseer or muxer or sink):
         return
 
     # Set Element Properties
-    source.set_property('sensor-id', 0)
+    source.set_property('location', '../streamit-virtual-edge-appliance/storage/tests/concourse/1.MKV')
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/stream-test')
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
-    pipeline.add(encoder)
+    pipeline.add(demuxer)
     pipeline.add(parser)
     pipeline.add(muxer)
     pipeline.add(sink)
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(encoder)
-    encoder.link(parser)
+    source.link(demuxer)
+    demuxer.link(parser)
     parser.link(muxer)
     muxer.link(sink)
     
@@ -74,3 +74,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+

@@ -1,5 +1,7 @@
 #
-# Publish video to Ant Server
+#
+# Display the MKV File on the Screen using the EGL Sink of Nvidia
+#
 #
 import argparse
 import sys
@@ -18,47 +20,45 @@ def main():
     GObject.threads_init()
     Gst.init(None)
 
+
     # Create Pipeline Element
+    print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
-        print("Unable to create Pipeline")
-        return False
+        sys.stderr.write(" Unable to create Pipeline")
     
-    # Create GST Elements
-    source = create_element_or_error("nvarguscamerasrc", "camera-source")
-    
-    encoder = create_element_or_error("nvv4l2h264enc", "encoder")
-    parser = create_element_or_error("h264parse", "parser")
-    muxer = create_element_or_error("flvmux", "muxer")
-    sink = create_element_or_error("rtmpsink", "sink")
-
-    if not (source or encoder or parseer or muxer or sink):
-        return
+    # gst-launch-1.0 -v filesrc location=1.MKV ! matroskademux ! h264parse ! nvoverlaysink
+    # ______________________________
+    # Create Elements
+    source = create_element_or_error("filesink", "camera-source")
+    convertor = create_element_or_error("nvvidconv", "converter-1")
+    transform = create_element_or_error("nvegltransform", "nvegl-transform")
+    sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
-    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/stream-test')
-
+    source.set_property('bufapi-version', True)
+    
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
-    pipeline.add(encoder)
-    pipeline.add(parser)
-    pipeline.add(muxer)
+    pipeline.add(convertor)
     pipeline.add(sink)
+    pipeline.add(transform)
+
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(encoder)
-    encoder.link(parser)
-    parser.link(muxer)
-    muxer.link(sink)
-    
+    source.link(convertor)
+    convertor.link(transform)
+    transform.link(sink)
+
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
     bus = pipeline.get_bus()
     bus.add_signal_watch()
     bus.connect ("message", bus_call, loop)
+
 
     # Start play back and listen to events
     print("Starting pipeline")
@@ -68,6 +68,7 @@ def main():
         loop.run()
     except:
         pass
+
 
     # Cleanup
     pipeline.set_state(Gst.State.NULL)

@@ -45,8 +45,8 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    # pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
+    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_facedetectir.txt")
+    # pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
     sink.set_property('sync', 0)
 
     # Add Elemements to Pipielin

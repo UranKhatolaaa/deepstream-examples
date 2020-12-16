@@ -25,7 +25,7 @@ def main():
         return False
     
     # Create GST Elements
-    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    source = create_element_or_error("filesrc", "file-source")
     
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
@@ -36,7 +36,7 @@ def main():
         return
 
     # Set Element Properties
-    source.set_property('sensor-id', 0)
+    source.set_property('location', 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/stream-test')
 
     # Add Elemements to Pipielin
@@ -74,3 +74,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
