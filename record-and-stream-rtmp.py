@@ -60,7 +60,7 @@ def main():
     # pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_trafficcamnet.txt")
     # pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_facedetectir.txt")
     pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_detectnet_v2.txt")
-    s_sink.set_property('location', 'rtmp://media.streamit.link/LiveApp/streaming-test')
+    s_sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/streaming-test')
     r_encoder.set_property('bitrate', 8000000)
     r_sink.set_property('location', 'video_' + str(datetime.datetime.utcnow().date()) + '.mp4')
 
