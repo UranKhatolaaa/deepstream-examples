@@ -115,7 +115,6 @@ def main():
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
-    caps = create_element_or_error("capsfilter", "filter-convertor-2")
     
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")

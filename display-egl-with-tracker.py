@@ -33,6 +33,7 @@ def main():
     streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pgie = create_element_or_error("nvinfer", "primary-inference")
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
+    tracker = create_element_or_error("nvtracker", "tracker")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
@@ -49,8 +50,13 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
-    # convertor.set_property('flip-method', 2)
+
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary_nano.txt")
+    
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so')
+    tracker.set_property('gpu-id', 0)
+    tracker.set_property('enable-batch-process', 1)
+    tracker.set_property('ll-config-file', '/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/tracker_config.yml')
 
 
     # Add Elemements to Pipielin
@@ -59,6 +65,7 @@ def main():
     pipeline.add(streammux)
     pipeline.add(pgie)
     pipeline.add(convertor)
+    pipeline.add(tracker)
     pipeline.add(nvosd)
     pipeline.add(convertor2)
     pipeline.add(transform)
@@ -73,7 +80,8 @@ def main():
     source.link(streammux)
     streammux.link(pgie)
     pgie.link(convertor)
-    convertor.link(nvosd)
+    convertor.link(tracker)
+    tracker.link(nvosd)
     nvosd.link(convertor2)
     convertor2.link(transform)
     transform.link(sink)
