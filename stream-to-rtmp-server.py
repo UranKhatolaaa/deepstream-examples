@@ -32,9 +32,6 @@ def main():
     muxer = create_element_or_error("flvmux", "muxer")
     sink = create_element_or_error("rtmpsink", "sink")
 
-    if not (source or encoder or parseer or muxer or sink):
-        return
-
     # Set Element Properties
     source.set_property('sensor-id', 0)
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/stream-test')

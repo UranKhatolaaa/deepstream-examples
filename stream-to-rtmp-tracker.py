@@ -97,21 +97,16 @@ def main():
     
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
-    src_caps = create_element_or_error("capsfilter", "source-caps-definition")
-    src_caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, framerate=30/1, format=(string)NV12"))
-
     streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pgie = create_element_or_error("nvinfer", "primary-inference")
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     tracker = create_element_or_error("nvtracker", "tracker")
     convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
-    caps = create_element_or_error("capsfilter", "filter-convertor-2")
-    
+    # caps = create_element_or_error("capsfilter", "filter-convertor-2")
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
     sink = create_element_or_error("rtmpsink", "sink")
-    
 
     # Set Element Properties
     source.set_property('sensor-id', 0)
@@ -138,7 +133,6 @@ def main():
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
-    pipeline.add(src_caps)
     pipeline.add(streammux)
     pipeline.add(pgie)
     pipeline.add(convertor)
@@ -155,8 +149,7 @@ def main():
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(src_caps)
-    src_caps.link(streammux)
+    source.link(streammux)
     streammux.link(pgie)
     pgie.link(convertor)
     convertor.link(tracker)

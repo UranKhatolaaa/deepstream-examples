@@ -27,7 +27,6 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # ______________________________
     # Create Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     convertor = create_element_or_error("nvvidconv", "converter-1")
