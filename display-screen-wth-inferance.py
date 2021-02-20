@@ -47,11 +47,9 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
     pgie.set_property('batch-size', 1)
     pgie.set_property('unique-id', 1)
-    # pgie.set_property('model-engine-file', 'models/Primary_Detector/resnet10.caffemodel_b30_gpu0_int8.engine')
-    # convertor2.set_property('flip-method', 2)
 
 
     # Add Elemements to Pipielin

@@ -108,7 +108,7 @@ def main():
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     src_caps = create_element_or_error("capsfilter", "source-caps-definition")
-    src_caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, framerate=30/1, format=(string)NV12"))
+    src_caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)3264, height=(int)2464, framerate=30/1, format=(string)NV12"))
 
     streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pgie = create_element_or_error("nvinfer", "primary-inference")
@@ -131,13 +131,13 @@ def main():
     encoder.set_property('bitrate', 4000000)
     
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1280)
-    streammux.set_property('height', 720)
+    streammux.set_property('width', 720)
+    streammux.set_property('height', 480)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/streaming-test')
 
     # Add Elemements to Pipielin

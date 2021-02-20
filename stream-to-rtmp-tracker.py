@@ -132,7 +132,7 @@ def main():
     tracker.set_property('enable-batch-process', 1)
     tracker.set_property('ll-config-file', '/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/tracker_config.yml')
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_facedetectir.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/streaming-test')
 
     # Add Elemements to Pipielin

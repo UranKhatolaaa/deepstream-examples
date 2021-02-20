@@ -45,7 +45,7 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "./nv-inferance-config-files/config_infer_primary_peoplenet.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
     # convertor.set_property('flip-method', 2)
 
 
