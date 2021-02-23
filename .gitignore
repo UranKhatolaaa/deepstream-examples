@@ -6,3 +6,5 @@
 .env
 .DS_Store
 ben-example
+streamit-detect-model-class
+streamit-relay-handler-test
